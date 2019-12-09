@@ -5,8 +5,6 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.poi.hssf.usermodel.HSSFCell;
@@ -56,14 +54,11 @@ public class ShopController {
 			// TODO: handle exception
 		}
 
-
 		return "orders";
 	}
 
-
 	@RequestMapping(value="/downLoadExcel.do")
-	public void downLoadExcel(HttpServletRequest request, HttpServletResponse response, Model model, @RequestParam("fileName") String fileName) throws Exception {
-		System.out.println(request.getRequestURI());
+	public void downLoadExcel(HttpServletResponse response, @RequestParam("fileName") String fileName) throws Exception {
 		HSSFWorkbook objWorkBook = new HSSFWorkbook();
 		HSSFSheet objSheet = null;
 		HSSFRow objRow = null;
@@ -98,11 +93,11 @@ public class ShopController {
 			objRow = objSheet.createRow(i+1);
 			objRow.setHeight ((short) 0x150);
 
-			List<String> val = getInfos(jsonlist.get(i));
+			List<String> totalList = getSplit(jsonlist.get(i));
 
-			for (int i2 = 0; i2 < val.size(); i2++) {
+			for (int i2 = 0; i2 < totalList.size(); i2++) {
 				objCell = objRow.createCell(i2);
-				objCell.setCellValue(val.get(i2));
+				objCell.setCellValue(totalList.get(i2));
 				objCell.setCellStyle(styleHd);
 			}
 		}
@@ -119,29 +114,27 @@ public class ShopController {
 		response.getOutputStream().close();
 	}
 
-	public List<String> getInfos(Object object) {
+	public List<String> getSplit(Object object) {
 		List<String> data = new ArrayList<String>();
 		
 		String result = object.toString().trim();
-		result = result.replace("{", "");
-		result = result.replace("}", "");
+		result = result.replaceAll("[{}]", "");
+		String[] infos = result.split(",");
 
-		for (int i = 0; i < result.length(); i++) {
-			if(result.charAt(i) == '=') {
-				String str = "";
-				for(int i2 = i+1; i2 < result.length(); i2++) {
-					if(result.charAt(i2) != ',') {
-						str += result.charAt(i2);
-					}
-					else {
-						break;
-					}
+		for (int i = 0; i < infos.length; i++) {
+			String str = "";
+			for (int j = infos[i].length() -1; j >= 0; j--) {
+				if(infos[i].charAt(j) != '=') {
+					str += infos[i].charAt(j);
 				}
-				data.add(str);
-				
+				else {
+					break;
+				}
 			}
+			
+			str = new StringBuffer(str).reverse().toString();
+			data.add(str);
 		}
-
 		return data;
 	}
 
